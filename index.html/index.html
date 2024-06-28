@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population Growth Chart</title>
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <script>
+        window.onload = function () {
+            var originalData = [];
+
+            var chart1 = new CanvasJS.Chart("chartContainer", {
+                animationEnabled: true,
+                animationDuration: 2000,
+                backgroundColor: "gray",
+                title: {
+                    text: "Population Growth Chart By Year",
+                    fontColor: "white",
+                    fontSize: 20,
+                    margin: 20,
+                    padding: 10,
+                    backgroundColor: "black"
+                },
+                exportFileName: "PopulationGraph",
+                exportEnabled: true,
+                data: []
+            });
+
+            var url1 = "https://mocki.io/v1/5261e651-3046-476b-bc5d-ab96691631eb";
+            fetch(url1)
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error(" No Network Response");
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data.data && Array.isArray(data.data)) {
+                        data.data.forEach(function (cityData) {
+                            var dataPoints = [];
+                            cityData.populations.forEach(function (item) {
+                                dataPoints.push({ label: item.year, y: item.population });
+                            });
+                            var cityDataset = {
+                                type: "line",
+                                cursor: "pointer",
+                                indexLabelPlacement: "outside",
+                                indexLabelBackgroundColor: "LightBlue",
+                                explodeOnClick: true,
+                                legendMarkerType: "none",
+                                showInLegend: true,
+                                name: cityData.city,
+                                dataPoints: dataPoints
+                            };
+                            originalData.push(cityDataset);
+                            chart1.options.data.push(cityDataset);
+                        });
+                        chart1.render();
+                    }
+                });
+
+            document.getElementById("applyFilter").addEventListener("click", function () {
+                var startYear = Number(document.getElementById("startYear").value);
+                var endYear = Number(document.getElementById("endYear").value);
+                var City = document.getElementById("selectCity").value;
+
+                var filteredData = originalData.map(function (cityDataset) {
+                    var filteredDataPoints = cityDataset.dataPoints.filter(function (point) {
+                        var year = Number(point.label);
+                        var inYearRange = year >= startYear && year <= endYear;
+                        var inCity = City === "All" || cityDataset.name === City;
+                        return inYearRange && inCity;
+                    });
+
+                    return {
+                        type: cityDataset.type,
+                        legendMarkerType: cityDataset.legendMarkerType,
+                        showInLegend: cityDataset.showInLegend,
+                        name: cityDataset.name,
+                        dataPoints: filteredDataPoints
+                    };
+                }).filter(function (cityDataset) {
+                    return cityDataset.dataPoints.length > 0;
+                });
+
+                chart1.options.data = filteredData;
+                chart1.render();
+            });
+        };
+    </script>
+</head>
+
+<body>
+    <div class="chart1">
+        <center>
+            <h2>Line Graph</h2>
+        </center>
+        <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+    </div>
+    <label for="fromyear">From Year:</label>
+    <input type="number" id="startYear" name="startYear" value="0">
+    <label for="endYear">To Year:</label>
+    <input type="number" id="endYear" name="endYear" value="0">
+    <label for="city">City:</label>
+    <select id="selectCity">
+        <option value="All">All</option>
+        <option value="Pune">Pune</option>
+        <option value="Mumbai">Mumbai</option>
+        <option value="Nashik">Nashik</option>
+        <option value="Nagpur">Nagpur</option>
+    </select>
+    <button id="applyFilter">Apply Filter</button>
+</body>
+
+</html>
